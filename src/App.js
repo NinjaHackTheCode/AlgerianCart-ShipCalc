@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./styles.css";
 
-/* --------- YOUR DATA (unchanged) --------- */
-const EXCLUDED = new Set([
+/* --------- DEFAULT EXCLUDED (editable in UI) --------- */
+const DEFAULT_EXCLUDED = [
     "Adrar",
     "Tindouf",
     "Djanet",
@@ -12,7 +12,7 @@ const EXCLUDED = new Set([
     "In Salah",
     "Timimoun",
     "Bordj Badji Mokhtar",
-]);
+];
 
 const ALL_WILAYAS = [
     [1, "Adrar"],
@@ -76,44 +76,25 @@ const ALL_WILAYAS = [
 ];
 
 const ADJACENT_TO_TZO = new Set(["Béjaïa", "Bouira", "Boumerdès"]);
-
 const RULE_PRICE = { base: 600, tizi: 400, adjacent: 500 };
 
-/* ---------- PRICING HELPERS (final logic) ---------- */
-// قاعدة السعر حسب الولاية ونوع التوصيل
+/* ---------- PRICING HELPERS ---------- */
 function getRulePrice(wilayaName, type /* "home" | "desk" */) {
     if (wilayaName === "Tizi Ouzou") {
-        // تيزي وزو: لا تتجاوز 400 (و 300 للـ desk)
-        return type === "desk" ? 300 : 400;
+        return type === "desk" ? 300 : 400; // 300 desk / 400 home
     }
-    if (ADJACENT_TO_TZO.has(wilayaName)) {
-        // ولايات ملاصقة: لا تتجاوز 500
-        return 500;
-    }
-    // باقي الولايات: لا تتجاوز 600
+    if (ADJACENT_TO_TZO.has(wilayaName)) return 500;
     return 600;
 }
 
-/**
- * منطق التسعير النهائي:
- * - لو ما فيش سعر شركة => نرجّع سعر القاعدة (اللي هو أصلاً مقيد 400/500/600 أو 300 لتيزي-دِسك).
- * - لو سعر الشركة أقل من القاعدة => نأخذ سعر الشركة (ما نرفعش).
- * - لو سعر الشركة أعلى من القاعدة => نأخذ سعر القاعدة (وبكذا لو الريميز > 250 "نخليه يمر").
- * ملاحظة: بهذه القاعدة، ما فيش سقف 250 للتخفيض؛ إذا الفرق أكبر من 250 نسمح به.
- */
+/** Max remise = 250 DA; don't raise if company is cheaper; fallback to baseline if no company price */
 function applyDiscountCap(rulePrice, listPrice) {
-    // no company price -> use baseline
     if (listPrice == null || isNaN(listPrice)) return rulePrice;
-
-    // company cheaper than baseline -> don't raise
-    if (listPrice <= rulePrice) return listPrice;
-
-    // company more expensive -> cap remise at 250
-    return Math.max(rulePrice, listPrice - 250);
+    if (listPrice <= rulePrice) return listPrice; // don't raise
+    return Math.max(rulePrice, listPrice - 250); // cap remise at 250
 }
 
-/* ---------- COMPANY DEFAULTS (from your list) ---------- */
-/* desk = null where "************" */
+/* ---------- COMPANY DEFAULTS (your list) ---------- */
 const DEFAULT_OFFICIAL = {
     Adrar: { home: 1400, desk: null },
     Chlef: { home: 800, desk: 450 },
@@ -175,19 +156,20 @@ const DEFAULT_OFFICIAL = {
     "El Meniaa": { home: 1000, desk: null },
 };
 
-/* ---------- build initial (prefill from defaults) ---------- */
+/* ---------- initial official (include ALL; UI will filter) ---------- */
 function buildInitialOfficialPrices() {
     const obj = {};
     ALL_WILAYAS.forEach(([, name]) => {
-        if (EXCLUDED.has(name)) return; // don't show excluded in table
         const def = DEFAULT_OFFICIAL[name] || { home: null, desk: null };
         obj[name] = { ...def };
     });
     return obj;
 }
-/* --------- END YOUR DATA --------- */
+
+/* ===================================================== */
 
 export default function App() {
+    /* theme */
     const [theme, setTheme] = useState(
         () => localStorage.getItem("theme") || "light"
     );
@@ -196,6 +178,7 @@ export default function App() {
         localStorage.setItem("theme", theme);
     }, [theme]);
 
+    /* official prices */
     const [official, setOfficial] = useState(() => {
         const saved = localStorage.getItem("officialPrices");
         return saved ? JSON.parse(saved) : buildInitialOfficialPrices();
@@ -204,16 +187,38 @@ export default function App() {
         localStorage.setItem("officialPrices", JSON.stringify(official));
     }, [official]);
 
+    /* excluded (editable) */
+    const [excluded, setExcluded] = useState(() => {
+        const saved = localStorage.getItem("excludedWilayasV1");
+        return new Set(saved ? JSON.parse(saved) : DEFAULT_EXCLUDED);
+    });
+    useEffect(() => {
+        localStorage.setItem(
+            "excludedWilayasV1",
+            JSON.stringify([...excluded])
+        );
+    }, [excluded]);
+
+    /* lists filtered by exclusions */
     const wilayas = useMemo(
-        () => ALL_WILAYAS.filter(([, n]) => !EXCLUDED.has(n)),
-        []
+        () => ALL_WILAYAS.filter(([, n]) => !excluded.has(n)),
+        [excluded]
     );
 
+    /* selection */
     const [selected, setSelected] = useState("Tizi Ouzou");
     const [type, setType] = useState("home"); // "home" | "desk"
 
+    useEffect(() => {
+        // if current selected becomes excluded, jump to first available
+        if (excluded.has(selected)) {
+            const first = wilayas[0]?.[1] || "Tizi Ouzou";
+            setSelected(first);
+        }
+    }, [excluded, selected, wilayas]);
+
     const rulePrice = getRulePrice(selected, type);
-    const isAdjacent = ADJACENT_TO_TZO.has(selected); // للعرض فقط
+    const isAdjacent = ADJACENT_TO_TZO.has(selected); // for info only
     const listPrice = official[selected]?.[type] ?? null;
     const finalPrice = applyDiscountCap(rulePrice, listPrice);
 
@@ -222,8 +227,8 @@ export default function App() {
             {/* gradient header */}
             <header className="hero fade-in">
                 <div className="hero__content">
-                    <h1>حاسبة سعر التوصيل — الجزائر (COD)</h1>
-                    <p>واجهة سريعة، ألوان مرتبة، وثيم فاتح/داكن ✨</p>
+                    <h1>AlgerianCart ShipCalc</h1>
+                    <p>حاسبة سعر التوصيل — الجزائر (COD)</p>
                 </div>
                 <button
                     className="theme-toggle"
@@ -305,16 +310,6 @@ export default function App() {
                         <div className="total__value">
                             {finalPrice.toLocaleString()} دج
                         </div>
-                        {/* ملاحظة توضيحية سابقة — تُركت كمعلومة فقط */}
-                        {false &&
-                            listPrice &&
-                            listPrice > rulePrice &&
-                            listPrice - rulePrice > 250 && (
-                                <div className="total__note">
-                                    * سابقًا كان في سقف 250 دج للتخفيض. الآن
-                                    نسمح بتخفيض أكبر عند الحاجة.
-                                </div>
-                            )}
                     </div>
                 </div>
 
@@ -330,6 +325,7 @@ export default function App() {
 
                     <OfficialTable
                         official={official}
+                        excluded={excluded}
                         onChange={(name, key, val) =>
                             setOfficial((prev) => ({
                                 ...prev,
@@ -366,14 +362,30 @@ export default function App() {
                         </button>
                     </div>
                 </div>
+
+                {/* excluded editor */}
+                <div className="card slide-up delay-2">
+                    <h2 className="card__title">3) الولايات المستبعدة</h2>
+                    <p className="muted">
+                        اختر الولايات التي لا تريد عرضها في الحاسبة والجدول.
+                        الحفظ تلقائي.
+                    </p>
+                    <ExcludedEditor
+                        excluded={excluded}
+                        setExcluded={setExcluded}
+                    />
+                </div>
             </section>
         </main>
     );
 }
 
 /* ========= subcomponents ========= */
-function OfficialTable({ official, onChange }) {
-    const entries = Object.entries(official);
+
+function OfficialTable({ official, onChange, excluded }) {
+    const entries = Object.entries(official).filter(
+        ([name]) => !excluded.has(name)
+    );
     const [q, setQ] = useState("");
     const filtered = entries.filter(([name]) =>
         name.toLowerCase().includes(q.toLowerCase())
@@ -453,6 +465,92 @@ function NumberInput({ value, onChange, placeholder }) {
                 className="num-input"
             />
             <span className="suffix">دج</span>
+        </div>
+    );
+}
+
+/* ===== Excluded Editor (checkbox list) ===== */
+function ExcludedEditor({ excluded, setExcluded }) {
+    const [q, setQ] = useState("");
+
+    // keep code and name together
+    const filtered = ALL_WILAYAS.filter(([, n]) =>
+        n.toLowerCase().includes(q.toLowerCase())
+    );
+
+    const toggle = (name) => {
+        setExcluded((prev) => {
+            const next = new Set(prev);
+            if (next.has(name)) next.delete(name);
+            else next.add(name);
+            return next;
+        });
+    };
+
+    const setDefault = () => setExcluded(new Set(DEFAULT_EXCLUDED));
+    const clearAll = () => setExcluded(new Set());
+
+    return (
+        <div>
+            <div className="actions" style={{ marginBottom: 8 }}>
+                <button className="btn" onClick={setDefault}>
+                    تحديد الافتراضي
+                </button>
+                <button className="btn" onClick={clearAll}>
+                    إلغاء الكل
+                </button>
+            </div>
+
+            <input
+                className="search"
+                placeholder="ابحث عن ولاية…"
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+            />
+
+            <div
+                className="table-wrap"
+                style={{ maxHeight: 320, overflow: "auto" }}
+            >
+                <table className="table" aria-label="الولايات المستبعدة">
+                    <thead>
+                        <tr>
+                            <th>استبعاد</th>
+                            <th>الرقم</th>
+                            <th>الولاية</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {filtered.map(([code, name]) => (
+                            <tr key={name}>
+                                <td style={{ width: 90 }}>
+                                    <label className="radio">
+                                        <input
+                                            type="checkbox"
+                                            checked={excluded.has(name)}
+                                            onChange={() => toggle(name)}
+                                        />
+                                        <span></span>
+                                    </label>
+                                </td>
+                                <td>{String(code).padStart(2, "0")}</td>
+                                <td className="cell-w">{name}</td>
+                            </tr>
+                        ))}
+                        {filtered.length === 0 && (
+                            <tr>
+                                <td colSpan={3} className="empty">
+                                    لا توجد نتائج.
+                                </td>
+                            </tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
+
+            <p className="muted" style={{ marginTop: 8 }}>
+                المُستبعدة حاليًا: {excluded.size} ولاية.
+            </p>
         </div>
     );
 }
