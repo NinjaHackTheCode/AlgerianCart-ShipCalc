@@ -218,28 +218,57 @@ export default function App() {
     }, [excluded, selected, wilayas]);
 
     const rulePrice = getRulePrice(selected, type);
-    const isAdjacent = ADJACENT_TO_TZO.has(selected); // for info only
+    const isAdjacent = ADJACENT_TO_TZO.has(selected); // info only
     const listPrice = official[selected]?.[type] ?? null;
     const finalPrice = applyDiscountCap(rulePrice, listPrice);
 
+    // quick filter chips
+    const [segment, setSegment] = useState("all");
+    const displayedWilayas = useMemo(() => {
+        return wilayas.filter(([code, name]) => {
+            if (segment === "all") return true;
+            if (segment === "tizi") return name === "Tizi Ouzou";
+            if (segment === "adj") return ADJACENT_TO_TZO.has(name);
+            if (segment === "others")
+                return name !== "Tizi Ouzou" && !ADJACENT_TO_TZO.has(name);
+            return true;
+        });
+    }, [wilayas, segment]);
+
+    // keep selection in view when filtering
+    useEffect(() => {
+        if (!displayedWilayas.some(([, n]) => n === selected)) {
+            const best =
+                displayedWilayas[0]?.[1] || wilayas[0]?.[1] || selected;
+            setSelected(best);
+        }
+    }, [segment, displayedWilayas, selected, wilayas]);
+
     return (
         <main className="app" dir="rtl">
-            {/* gradient header */}
+            {/* header */}
             <header className="hero fade-in">
                 <div className="hero__content">
                     <h1>AlgerianCart ShipCalc</h1>
                     <p>حاسبة سعر التوصيل — الجزائر (COD)</p>
                 </div>
-                <button
-                    className="theme-toggle"
-                    onClick={() =>
-                        setTheme((t) => (t === "light" ? "dark" : "light"))
-                    }
-                    aria-label="Toggle theme"
-                    title="تبديل الثيم"
-                >
-                    {theme === "light" ? "🌙" : "🌞"}
-                </button>
+
+                {/* iOS-like theme switch */}
+                <label className="switch">
+                    <input
+                        type="checkbox"
+                        checked={theme === "dark"}
+                        onChange={() =>
+                            setTheme((t) => (t === "light" ? "dark" : "light"))
+                        }
+                        aria-label="Toggle theme"
+                    />
+                    <span className="slider">
+                        <span className="knob">
+                            {theme === "dark" ? "🌙" : "🌞"}
+                        </span>
+                    </span>
+                </label>
             </header>
 
             <section className="grid">
@@ -249,6 +278,42 @@ export default function App() {
                         1) اختر الولاية ونوع التوصيل
                     </h2>
 
+                    {/* quick chips */}
+                    <div className="chips">
+                        <button
+                            className={`chip ${
+                                segment === "all" ? "chip--on" : ""
+                            }`}
+                            onClick={() => setSegment("all")}
+                        >
+                            الكل
+                        </button>
+                        <button
+                            className={`chip ${
+                                segment === "tizi" ? "chip--on" : ""
+                            }`}
+                            onClick={() => setSegment("tizi")}
+                        >
+                            تيزي وزو
+                        </button>
+                        <button
+                            className={`chip ${
+                                segment === "adj" ? "chip--on" : ""
+                            }`}
+                            onClick={() => setSegment("adj")}
+                        >
+                            ملاصقة
+                        </button>
+                        <button
+                            className={`chip ${
+                                segment === "others" ? "chip--on" : ""
+                            }`}
+                            onClick={() => setSegment("others")}
+                        >
+                            باقي الولايات
+                        </button>
+                    </div>
+
                     <label className="label">الولاية</label>
                     <div className="select-wrap">
                         <select
@@ -256,7 +321,7 @@ export default function App() {
                             onChange={(e) => setSelected(e.target.value)}
                             className="select"
                         >
-                            {wilayas.map(([code, name]) => (
+                            {displayedWilayas.map(([code, name]) => (
                                 <option key={code} value={name}>
                                     {String(code).padStart(2, "0")} — {name}
                                 </option>
@@ -264,28 +329,43 @@ export default function App() {
                         </select>
                         <span className="select__chev">▾</span>
                     </div>
+                    <div className="picker-hint">
+                        <span className="badge">
+                            {String(
+                                ALL_WILAYAS.find(
+                                    ([, n]) => n === selected
+                                )?.[0] || ""
+                            ).padStart(2, "0")}
+                        </span>
+                        <span className="muted">رمز الولاية المختارة</span>
+                    </div>
 
-                    <div className="radio-row">
-                        <label className="radio">
-                            <input
-                                type="radio"
-                                name="type"
-                                value="home"
-                                checked={type === "home"}
-                                onChange={() => setType("home")}
-                            />
-                            <span>توصيل للمنزل</span>
-                        </label>
-                        <label className="radio">
-                            <input
-                                type="radio"
-                                name="type"
-                                value="desk"
-                                checked={type === "desk"}
-                                onChange={() => setType("desk")}
-                            />
-                            <span>نقطة استلام</span>
-                        </label>
+                    {/* segmented control for type */}
+                    <div
+                        className="segmented"
+                        role="tablist"
+                        aria-label="نوع التوصيل"
+                    >
+                        <button
+                            role="tab"
+                            aria-selected={type === "home"}
+                            className={`segmented__btn ${
+                                type === "home" ? "is-active" : ""
+                            }`}
+                            onClick={() => setType("home")}
+                        >
+                            توصيل للمنزل
+                        </button>
+                        <button
+                            role="tab"
+                            aria-selected={type === "desk"}
+                            className={`segmented__btn ${
+                                type === "desk" ? "is-active" : ""
+                            }`}
+                            onClick={() => setType("desk")}
+                        >
+                            نقطة استلام
+                        </button>
                     </div>
 
                     <ul className="facts">
@@ -473,7 +553,6 @@ function NumberInput({ value, onChange, placeholder }) {
 function ExcludedEditor({ excluded, setExcluded }) {
     const [q, setQ] = useState("");
 
-    // keep code and name together
     const filtered = ALL_WILAYAS.filter(([, n]) =>
         n.toLowerCase().includes(q.toLowerCase())
     );
@@ -524,16 +603,23 @@ function ExcludedEditor({ excluded, setExcluded }) {
                         {filtered.map(([code, name]) => (
                             <tr key={name}>
                                 <td style={{ width: 90 }}>
-                                    <label className="radio">
+                                    {/* fancy toggle */}
+                                    <label className="toggle">
                                         <input
                                             type="checkbox"
                                             checked={excluded.has(name)}
                                             onChange={() => toggle(name)}
                                         />
-                                        <span></span>
+                                        <span className="track">
+                                            <span className="dot" />
+                                        </span>
                                     </label>
                                 </td>
-                                <td>{String(code).padStart(2, "0")}</td>
+                                <td>
+                                    <span className="badge">
+                                        {String(code).padStart(2, "0")}
+                                    </span>
+                                </td>
                                 <td className="cell-w">{name}</td>
                             </tr>
                         ))}

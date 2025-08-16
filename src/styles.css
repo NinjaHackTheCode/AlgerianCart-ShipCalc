@@ -446,3 +446,205 @@ body {
 .bounce-in {
     animation: pop 0.25s ease-out both;
 }
+
+/* ===== Fancy iOS-like theme switch ===== */
+.switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    user-select: none;
+}
+.switch input {
+    display: none;
+}
+.switch .slider {
+    width: 56px;
+    height: 32px;
+    border-radius: 999px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    position: relative;
+    transition: background 0.25s, border-color 0.25s;
+}
+.switch .knob {
+    position: absolute;
+    top: 50%;
+    left: 4px;
+    transform: translateY(-50%);
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: linear-gradient(180deg, #fff, #f0f3ff);
+    color: #111;
+    font-size: 14px;
+    display: grid;
+    place-items: center;
+    transition: left 0.25s ease, background 0.25s ease, color 0.25s ease;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+}
+:root[data-theme="dark"] .switch .knob {
+    background: linear-gradient(180deg, #0f172a, #1e293b);
+    color: #fff;
+}
+.switch input:checked + .slider .knob {
+    left: 28px;
+}
+
+/* ===== Segmented control (delivery type) ===== */
+.segmented {
+    display: inline-flex;
+    border: 1px solid var(--line);
+    background: var(--panel);
+    border-radius: 12px;
+    padding: 4px;
+    gap: 4px;
+    margin-top: 12px;
+}
+.segmented__btn {
+    border: 0;
+    background: transparent;
+    color: var(--text);
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.05s;
+}
+.segmented__btn.is-active {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: #fff;
+}
+.segmented__btn:active {
+    transform: translateY(1px);
+}
+
+/* ===== Chips for quick filters ===== */
+.chips {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 6px 0 10px;
+}
+.chip {
+    border: 1px solid var(--line);
+    background: var(--panel);
+    color: var(--text);
+    padding: 6px 10px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.05s, border-color 0.2s;
+}
+.chip--on {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    color: #fff;
+    border-color: transparent;
+}
+.chip:active {
+    transform: translateY(1px);
+}
+
+/* ===== Badge (wilaya code) ===== */
+.badge {
+    display: inline-block;
+    min-width: 28px;
+    text-align: center;
+    font-weight: 800;
+    font-size: 11px;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: rgba(124, 92, 255, 0.15);
+    border: 1px solid var(--line);
+    color: var(--text);
+}
+
+/* hint under select */
+.picker-hint {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 8px 0 2px;
+}
+
+/* ===== Fancy toggle for ExcludedEditor ===== */
+.toggle {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 28px;
+    cursor: pointer;
+}
+.toggle input {
+    display: none;
+}
+.toggle .track {
+    position: absolute;
+    inset: 0;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    transition: background 0.2s, border-color 0.2s;
+}
+.toggle .dot {
+    position: absolute;
+    top: 50%;
+    left: 3px;
+    transform: translateY(-50%);
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #fff;
+    transition: left 0.22s ease, background 0.2s;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.12);
+}
+:root[data-theme="dark"] .toggle .dot {
+    background: #e2e8f0;
+}
+.toggle input:checked + .track {
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    border-color: transparent;
+}
+.toggle input:checked + .track .dot {
+    left: 25px;
+}
+
+/* small tweak to radios block you had (kept for compatibility) */
+.radio-row {
+    gap: 10px;
+}
+
+/* --- Sticky table headers: solid background + shadow --- */
+.table-wrap {
+    position: relative; /* create a stacking context */
+    background: var(--panel); /* ensure body area is solid too */
+}
+
+/* Make the header always visible and separated while scrolling */
+.table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 5; /* above tbody rows */
+    background: var(--panel) !important; /* solid in dark */
+    color: var(--text);
+    /* clear any previous gradients that might be semi-transparent */
+    background-image: none !important;
+    /* a crisp divider + soft shadow */
+    box-shadow: 0 1px 0 var(--line), 0 8px 18px rgba(0, 0, 0, 0.1);
+}
+
+/* Light theme: use a white header so it doesn't look transparent */
+:root[data-theme="light"] .table thead th {
+    background: #fff !important;
+    box-shadow: 0 1px 0 #e5e7eb, 0 8px 18px rgba(0, 0, 0, 0.06);
+}
+
+/* Optional: lock the header row height so it won’t “jump” */
+.table thead th {
+    padding-top: 12px;
+    padding-bottom: 12px;
+}
+
+/* Ensure tbody rows never cover the header (some browsers) */
+.table tbody td {
+    position: relative;
+    z-index: 1;
+}
