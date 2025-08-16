@@ -486,7 +486,7 @@ function OfficialTable({ official, onChange, excluded }) {
                         <tr>
                             <th>الولاية</th>
                             <th>السعر الرسمي — منزل</th>
-                            <th>السعر الرسمي — نقطة</th>
+                            <th>السعر الرسمي — نقطة إستلام</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -499,7 +499,7 @@ function OfficialTable({ official, onChange, excluded }) {
                                         onChange={(v) =>
                                             onChange(name, "home", v)
                                         }
-                                        placeholder="مثال: 800"
+                                        placeholder="فارغ"
                                     />
                                 </td>
                                 <td>
@@ -508,7 +508,7 @@ function OfficialTable({ official, onChange, excluded }) {
                                         onChange={(v) =>
                                             onChange(name, "desk", v)
                                         }
-                                        placeholder="مثال: 450"
+                                        placeholder="فارغ"
                                     />
                                 </td>
                             </tr>
