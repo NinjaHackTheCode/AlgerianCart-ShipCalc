@@ -35,7 +35,7 @@ const ALL_WILAYAS = [
     [16, "Alger"],
     [17, "Djelfa"],
     [18, "Jijel"],
-    [19, "Sétيف"],
+    [19, "Sétif"],
     [20, "Saïda"],
     [21, "Skikda"],
     [22, "Sidi Bel Abbès"],
@@ -76,6 +76,11 @@ const ALL_WILAYAS = [
     [57, "El M'Ghair"],
     [58, "El Meniaa"],
 ];
+
+const codeOf = (name) => {
+    const item = ALL_WILAYAS.find(([, n]) => n === name);
+    return item ? String(item[0]).padStart(2, "0") : "--";
+};
 
 const ADJACENT_TO_TZO = new Set(["Béjaïa", "Bouira", "Boumerdès"]);
 const RULE_PRICE = { base: 600, tizi: 400, adjacent: 500 };
@@ -239,6 +244,9 @@ export default function App() {
     const finalPrice = unavailable
         ? null
         : applyDiscountCap(rulePrice, listPrice, maxRemise);
+    const appliedRemise = unavailable
+        ? null
+        : Math.max(0, listPrice - finalPrice);
 
     const unavailableMsg =
         type === "desk"
@@ -438,13 +446,19 @@ export default function App() {
                                   }`}
                         </li>
                         <li>
-                            <b>السعر الرسمي (اختياري):</b>{" "}
+                            <b>السعر الرسمي :</b>{" "}
                             {listPrice
                                 ? `${listPrice.toLocaleString()} دج`
                                 : "—"}
                         </li>
                         <li>
                             <b>الخصم الأقصى:</b> {maxRemise.toLocaleString()} دج
+                        </li>
+                        <li>
+                            <b>الخصم المُطبَّق:</b>{" "}
+                            {unavailable
+                                ? "—"
+                                : `${appliedRemise.toLocaleString()} دج`}
                         </li>
                     </ul>
 
@@ -470,7 +484,6 @@ export default function App() {
 
                     <OfficialTable
                         official={official}
-                        excluded={excluded}
                         onChange={(name, key, val) =>
                             setOfficial((prev) => ({
                                 ...prev,
@@ -527,10 +540,8 @@ export default function App() {
 
 /* ========= subcomponents ========= */
 
-function OfficialTable({ official, onChange, excluded }) {
-    const entries = Object.entries(official).filter(
-        ([name]) => !excluded.has(name)
-    );
+function OfficialTable({ official, onChange }) {
+    const entries = Object.entries(official); // show ALL wilaya
     const [q, setQ] = useState("");
     const filtered = entries.filter(([name]) =>
         name.toLowerCase().includes(q.toLowerCase())
@@ -557,7 +568,13 @@ function OfficialTable({ official, onChange, excluded }) {
                     <tbody>
                         {filtered.map(([name, { home, desk }]) => (
                             <tr key={name}>
-                                <td className="cell-w">{name}</td>
+                                <td className="cell-w">
+                                    <span className="badge">
+                                        {codeOf(name)}
+                                    </span>{" "}
+                                    {name}
+                                </td>
+
                                 <td>
                                     <NumberInput
                                         value={home}
