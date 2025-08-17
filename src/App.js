@@ -142,7 +142,7 @@ const DEFAULT_OFFICIAL = {
     Mila: { home: 800, desk: 450 },
     "Aïn Defla": { home: 800, desk: 450 },
     Naâma: { home: 1100, desk: 550 },
-    "Aïn Témouchent": { home: 850, desk: 450 },
+    "Aïn Témوشنت": { home: 850, desk: 450 },
     Ghardaïa: { home: 900, desk: 600 },
     Relizane: { home: 850, desk: 450 },
     Timimoun: { home: 1400, desk: null },
@@ -211,7 +211,6 @@ export default function App() {
     const [type, setType] = useState("home"); // "home" | "desk"
 
     useEffect(() => {
-        // if current selected becomes excluded, jump to first available
         if (excluded.has(selected)) {
             const first = wilayas[0]?.[1] || "Tizi Ouzou";
             setSelected(first);
@@ -228,11 +227,21 @@ export default function App() {
         localStorage.setItem("maxRemise", String(maxRemise));
     }, [maxRemise]);
 
-    /* pricing */
-    const rulePrice = getRulePrice(selected, type);
-    const isAdjacent = ADJACENT_TO_TZO.has(selected); // info only
+    /* pricing base */
+    const isAdjacent = ADJACENT_TO_TZO.has(selected);
     const listPrice = official[selected]?.[type] ?? null;
-    const finalPrice = applyDiscountCap(rulePrice, listPrice, maxRemise);
+
+    /* === Availability rule for both desk and home === */
+    const unavailable = listPrice == null; // price missing => service not available
+    const rulePrice = unavailable ? null : getRulePrice(selected, type);
+    const finalPrice = unavailable
+        ? null
+        : applyDiscountCap(rulePrice, listPrice, maxRemise);
+
+    const unavailableMsg =
+        type === "desk"
+            ? "الشركة لا توفر نقطة استلام في هذه الولاية."
+            : "الشركة لا توفر التوصيل إلى المنزل في هذه الولاية.";
 
     // quick filter chips
     const [segment, setSegment] = useState("all");
@@ -265,7 +274,7 @@ export default function App() {
                     <p>حاسبة سعر التوصيل — الجزائر (COD)</p>
                 </div>
 
-                {/* iOS-like theme switch */}
+                {/* theme switch */}
                 <label className="switch">
                     <input
                         type="checkbox"
@@ -410,12 +419,16 @@ export default function App() {
 
                     <ul className="facts">
                         <li>
-                            <b>حسب القاعدة:</b> {rulePrice.toLocaleString()} دج{" "}
-                            {selected === "Tizi Ouzou"
-                                ? "(داخل تيزي وزو)"
-                                : isAdjacent
-                                ? "(ولاية ملاصقة)"
-                                : "(ولاية أخرى)"}
+                            <b>حسب القاعدة:</b>{" "}
+                            {unavailable
+                                ? "—"
+                                : `${(rulePrice || 0).toLocaleString()} دج ${
+                                      selected === "Tizi Ouzou"
+                                          ? "(داخل تيزي وزو)"
+                                          : isAdjacent
+                                          ? "(ولاية ملاصقة)"
+                                          : "(ولاية أخرى)"
+                                  }`}
                         </li>
                         <li>
                             <b>السعر الرسمي (اختياري):</b>{" "}
@@ -432,7 +445,9 @@ export default function App() {
                     <div className="total bounce-in">
                         <div className="total__label">السعر النهائي للعميل</div>
                         <div className="total__value">
-                            {finalPrice.toLocaleString()} دج
+                            {unavailable
+                                ? unavailableMsg
+                                : `${finalPrice.toLocaleString()} دج`}
                         </div>
                     </div>
                 </div>
@@ -647,7 +662,6 @@ function ExcludedEditor({ excluded, setExcluded }) {
                         {filtered.map(([code, name]) => (
                             <tr key={name}>
                                 <td style={{ width: 90 }}>
-                                    {/* fancy toggle */}
                                     <label className="toggle">
                                         <input
                                             type="checkbox"

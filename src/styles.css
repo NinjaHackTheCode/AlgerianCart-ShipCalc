@@ -51,6 +51,41 @@ body {
     color-scheme: light;
 }
 
+/* ===== iOS / iPhone fixes ===== */
+html {
+    -webkit-text-size-adjust: 100%;
+} /* يمنع تكبير النص التلقائي */
+* {
+    -webkit-tap-highlight-color: transparent;
+} /* يلغي فلاش اللمس */
+img,
+video,
+canvas,
+svg {
+    max-width: 100%;
+    height: auto;
+} /* يمنع تجاوز الصور */
+input,
+select,
+textarea,
+button {
+    font: inherit;
+} /* توحيد أحجام الخط */
+
+/* احترام الحواف حول النوتش/الهوم بار */
+body {
+    padding-top: env(safe-area-inset-top);
+    padding-right: env(safe-area-inset-right);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+}
+
+/* خلي الحواف داخل التطبيق مريحة على آيفون */
+.app {
+    padding-left: max(18px, env(safe-area-inset-left));
+    padding-right: max(18px, env(safe-area-inset-right));
+}
+
 /* base select styling stays the same, just ensure contrast */
 .select {
     background: var(--panel); /* dark-friendly bg */
@@ -153,15 +188,16 @@ body {
     transform: translateY(0);
 }
 
-/* GRID LAYOUT */
 .grid {
     margin-top: 18px;
     display: grid;
     gap: 16px;
+    grid-template-columns: minmax(0, 1fr); /* المهمّة */
 }
+
 @media (min-width: 950px) {
     .grid {
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
 
@@ -647,4 +683,173 @@ body {
 .table tbody td {
     position: relative;
     z-index: 1;
+}
+
+/* remove the default 3 dots (bullets / ellipsis) from facts list */
+.facts {
+    list-style: none; /* يشيل النقاط السوداء */
+    padding: 0; /* يشيل المسافة اليسار */
+    margin: 12px 0; /* يخلي نفس الهامش */
+}
+
+.facts li {
+    white-space: normal; /* يخلي النص ينزل للسطر لو طويل */
+    overflow: visible; /* يظهر النص كامل */
+    text-overflow: unset; /* يلغي الـ ... */
+}
+
+/* ============ RESPONSIVE DESIGN ============ */
+
+/* التابلت (من 769px إلى 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ===== Mobile (≤768px) ===== */
+@media (max-width: 768px) {
+    .app {
+        padding: 10px;
+    }
+
+    .hero {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 14px;
+        padding: 16px;
+    }
+    .hero__content h1 {
+        font-size: 18px;
+    }
+    .hero__content p {
+        font-size: 14px;
+    }
+
+    .grid {
+        grid-template-columns: 1fr !important;
+        gap: 12px;
+    }
+
+    .card {
+        padding: 12px;
+        border-radius: 14px;
+    }
+    .card__title {
+        font-size: 14px;
+    }
+
+    .btn,
+    .segmented__btn,
+    .chip {
+        width: 100%;
+        text-align: center;
+    }
+    .actions {
+        flex-direction: column;
+    }
+
+    .chips,
+    .segmented {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .total__value {
+        font-size: 22px;
+    }
+
+    /* الجداول: تمرير أفقي ناعم على iOS */
+    .table-wrap {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .table {
+        table-layout: auto;
+        font-size: 12px;
+    }
+
+    .cell-w {
+        white-space: normal !important;
+        word-break: break-word;
+    }
+
+    /* إدخالات رقمية أريح على الموبايل */
+    .input-wrap {
+        max-width: none;
+        width: 100%;
+    }
+    .num-input {
+        width: 100%;
+        font-size: 13px;
+        padding: 8px;
+    }
+    .suffix {
+        font-size: 11px;
+        padding: 4px 6px;
+    }
+}
+
+/* ===== RTL scroll fix for iOS Safari (place at END) ===== */
+.table-wrap {
+    direction: ltr; /* start scroll from LEFT */
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-inline-start: 0;
+    width: 100%;
+}
+
+.table-wrap .table {
+    direction: rtl; /* keep table content RTL */
+    margin: 0;
+}
+
+/* ===== PHONE TABLES (≤480px): sticky off + size + wrapping ===== */
+@media (max-width: 480px) {
+    /* 1) عطّل الـ sticky على كل الهواتف */
+    .table thead th {
+        position: static !important;
+        box-shadow: none !important;
+        background-image: none !important;
+    }
+
+    /* 2) متغيرات تحكم سريعة */
+    :root {
+        --phone-pad: 16px; /* هامش جانبي حول الجدول */
+        --phone-table-w: clamp(
+            320px,
+            calc(
+                100dvw - (var(--phone-pad) * 2) - env(safe-area-inset-left) -
+                    env(safe-area-inset-right)
+            ),
+            380px /* أقصى عرض للجدول على الهاتف */
+        );
+    }
+
+    /* 3) أبعاد الحاوية والجدول */
+    .table-wrap {
+        width: var(--phone-table-w);
+        max-width: var(--phone-table-w);
+        margin-inline: auto;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .table {
+        width: var(--phone-table-w) !important;
+        min-width: var(--phone-table-w) !important;
+        table-layout: fixed;
+        font-size: 12px;
+    }
+
+    /* 4) حشوة الخلايا واللف */
+    .table th,
+    .table td {
+        padding: 8px 10px;
+        text-align: right;
+        white-space: normal !important;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+    }
 }
