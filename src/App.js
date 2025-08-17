@@ -33,7 +33,7 @@ const ALL_WILAYAS = [
     [16, "Alger"],
     [17, "Djelfa"],
     [18, "Jijel"],
-    [19, "Sétif"],
+    [19, "Sétيف"],
     [20, "Saïda"],
     [21, "Skikda"],
     [22, "Sidi Bel Abbès"],
@@ -87,11 +87,12 @@ function getRulePrice(wilayaName, type /* "home" | "desk" */) {
     return 600;
 }
 
-/** Max remise = 250 DA; don't raise if company is cheaper; fallback to baseline if no company price */
-function applyDiscountCap(rulePrice, listPrice) {
+/** Don't raise if company is cheaper; cap the remise by `cap` DA */
+function applyDiscountCap(rulePrice, listPrice, cap) {
     if (listPrice == null || isNaN(listPrice)) return rulePrice;
     if (listPrice <= rulePrice) return listPrice; // don't raise
-    return Math.max(rulePrice, listPrice - 250); // cap remise at 250
+    const safeCap = Number.isFinite(cap) ? Math.max(0, cap) : 250;
+    return Math.max(rulePrice, listPrice - safeCap);
 }
 
 /* ---------- COMPANY DEFAULTS (your list) ---------- */
@@ -114,7 +115,7 @@ const DEFAULT_OFFICIAL = {
     Alger: { home: 700, desk: 450 },
     Djelfa: { home: 950, desk: 450 },
     Jijel: { home: 800, desk: 450 },
-    Sétif: { home: 800, desk: 450 },
+    Sétيف: { home: 800, desk: 450 },
     Saïda: { home: 850, desk: 450 },
     Skikda: { home: 800, desk: 450 },
     "Sidi Bel Abbès": { home: 800, desk: 450 },
@@ -217,10 +218,21 @@ export default function App() {
         }
     }, [excluded, selected, wilayas]);
 
+    /* ===== Max Remise (editable, persists) ===== */
+    const [maxRemise, setMaxRemise] = useState(() => {
+        const saved = localStorage.getItem("maxRemise");
+        const n = saved == null ? 250 : Number(saved);
+        return Number.isFinite(n) ? n : 250;
+    });
+    useEffect(() => {
+        localStorage.setItem("maxRemise", String(maxRemise));
+    }, [maxRemise]);
+
+    /* pricing */
     const rulePrice = getRulePrice(selected, type);
     const isAdjacent = ADJACENT_TO_TZO.has(selected); // info only
     const listPrice = official[selected]?.[type] ?? null;
-    const finalPrice = applyDiscountCap(rulePrice, listPrice);
+    const finalPrice = applyDiscountCap(rulePrice, listPrice, maxRemise);
 
     // quick filter chips
     const [segment, setSegment] = useState("all");
@@ -368,6 +380,34 @@ export default function App() {
                         </button>
                     </div>
 
+                    {/* max remise editor */}
+                    <div style={{ marginTop: 12 }}>
+                        <label className="label">
+                            الحد الأقصى للريميز (دج)
+                        </label>
+                        <div className="input-wrap" style={{ maxWidth: 220 }}>
+                            <NumberInput
+                                value={maxRemise}
+                                onChange={(v) =>
+                                    setMaxRemise(v == null ? 0 : Math.max(0, v))
+                                }
+                                placeholder="250"
+                            />
+                            <button
+                                className="btn"
+                                style={{ marginInlineStart: 8 }}
+                                onClick={() => setMaxRemise(250)}
+                                title="إرجاع القيمة الافتراضية"
+                            >
+                                إعادة 250
+                            </button>
+                        </div>
+                        <p className="muted" style={{ margin: "6px 0 0" }}>
+                            إذا كان سعر الشركة أعلى من القاعدة، يُطبَّق خصم
+                            أقصاه {maxRemise.toLocaleString()} دج.
+                        </p>
+                    </div>
+
                     <ul className="facts">
                         <li>
                             <b>حسب القاعدة:</b> {rulePrice.toLocaleString()} دج{" "}
@@ -382,6 +422,10 @@ export default function App() {
                             {listPrice
                                 ? `${listPrice.toLocaleString()} دج`
                                 : "—"}
+                        </li>
+                        <li>
+                            <b>الريميز الأقصى:</b> {maxRemise.toLocaleString()}{" "}
+                            دج
                         </li>
                     </ul>
 
