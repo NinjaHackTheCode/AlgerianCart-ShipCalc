@@ -188,9 +188,23 @@ export default function App() {
 
     /* official prices */
     const [official, setOfficial] = useState(() => {
+        const base = buildInitialOfficialPrices();
         const saved = localStorage.getItem("officialPrices");
-        return saved ? JSON.parse(saved) : buildInitialOfficialPrices();
+        if (!saved) return base;
+        try {
+            const parsed = JSON.parse(saved);
+            const merged = Object.fromEntries(
+                Object.keys(base).map((name) => [
+                    name,
+                    parsed[name] ?? base[name],
+                ])
+            );
+            return merged;
+        } catch {
+            return base;
+        }
     });
+
     useEffect(() => {
         localStorage.setItem("officialPrices", JSON.stringify(official));
     }, [official]);
@@ -541,7 +555,13 @@ export default function App() {
 /* ========= subcomponents ========= */
 
 function OfficialTable({ official, onChange }) {
-    const entries = Object.entries(official); // show ALL wilaya
+    const entries = React.useMemo(
+        () =>
+            Object.entries(official).sort((a, b) =>
+                codeOf(a[0]).localeCompare(codeOf(b[0]))
+            ),
+        [official]
+    );
     const [q, setQ] = useState("");
     const filtered = entries.filter(([name]) =>
         name.toLowerCase().includes(q.toLowerCase())
