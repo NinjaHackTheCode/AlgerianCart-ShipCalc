@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
+
 import "./styles.css";
+import logo from "./assets/logo.png";
 
 /* --------- DEFAULT EXCLUDED (editable in UI) --------- */
 const DEFAULT_EXCLUDED = [
@@ -270,7 +272,14 @@ export default function App() {
             {/* header */}
             <header className="hero fade-in">
                 <div className="hero__content">
-                    <h1>AlgerianCart ShipCalc</h1>
+                    <div className="title-with-logo">
+                        <img
+                            src={logo}
+                            alt="AlgerianCart Logo"
+                            className="logo"
+                        />
+                        <h1>AlgerianCart ShipCalc</h1>
+                    </div>
                     <p>حاسبة سعر التوصيل — الجزائر (COD)</p>
                 </div>
 
@@ -391,9 +400,7 @@ export default function App() {
 
                     {/* max remise editor */}
                     <div style={{ marginTop: 12 }}>
-                        <label className="label">
-                            الحد الأقصى للريميز (دج)
-                        </label>
+                        <label className="label">الحد الأقصى للخصم (دج)</label>
                         <div className="input-wrap" style={{ maxWidth: 220 }}>
                             <NumberInput
                                 value={maxRemise}
@@ -437,8 +444,7 @@ export default function App() {
                                 : "—"}
                         </li>
                         <li>
-                            <b>الريميز الأقصى:</b> {maxRemise.toLocaleString()}{" "}
-                            دج
+                            <b>الخصم الأقصى:</b> {maxRemise.toLocaleString()} دج
                         </li>
                     </ul>
 

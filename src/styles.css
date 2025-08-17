@@ -698,6 +698,67 @@ body {
     text-overflow: unset; /* يلغي الـ ... */
 }
 
+/* Center the content area inside the hero on desktop */
+.hero {
+    justify-content: center; /* center hero__content horizontally */
+    position: relative; /* so we can absolutely position the switch */
+}
+
+.hero__content {
+    text-align: center; /* center text under the title */
+}
+
+.title-with-logo {
+    display: inline-flex;
+    flex-direction: column; /* logo on top, title under it */
+    align-items: center;
+    gap: 8px;
+}
+
+.title-with-logo h1 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 800;
+    line-height: 1.1;
+    white-space: nowrap; /* keep it on one line on desktop */
+}
+
+/* Size the image only */
+.title-with-logo .logo {
+    width: 55px; /* tweak as you like */
+    height: 55px;
+    object-fit: contain;
+}
+
+/* Keep the theme toggle in the top corner while content is centered */
+.hero .switch {
+    position: absolute;
+    top: 16px;
+    inset-inline-end: 16px; /* RTL-aware "right" */
+}
+
+/* ---- Mobile (≤768px): center + bigger logo ---- */
+@media (max-width: 768px) {
+    .title-with-logo {
+        flex-direction: column; /* logo above title */
+        align-items: center;
+        text-align: center;
+        gap: 10px;
+    }
+    .title-with-logo .logo {
+        width: 70px; /* bigger on phone */
+        height: 70px;
+    }
+}
+
+/* ---- Small phones (≤480px): even bigger if you want ---- */
+@media (max-width: 480px) {
+    .title-with-logo .logo {
+        width: 80px;
+        height: 80px;
+    }
+}
+
 /* ============ RESPONSIVE DESIGN ============ */
 
 /* التابلت (من 769px إلى 1024px) */
