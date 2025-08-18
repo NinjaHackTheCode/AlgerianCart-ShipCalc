@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 
 import "./styles.css";
 import logo from "./assets/logo.png";
+import LogoZynCode from "./assets/LogoZynCode.png";
 
 /* --------- DEFAULT EXCLUDED (editable in UI) --------- */
 const DEFAULT_EXCLUDED = [
@@ -83,7 +84,6 @@ const codeOf = (name) => {
 };
 
 const ADJACENT_TO_TZO = new Set(["Béjaïa", "Bouira", "Boumerdès"]);
-const RULE_PRICE = { base: 600, tizi: 400, adjacent: 500 };
 
 /* ---------- PRICING HELPERS ---------- */
 function getRulePrice(wilayaName, type /* "home" | "desk" */) {
@@ -122,7 +122,7 @@ const DEFAULT_OFFICIAL = {
     Alger: { home: 700, desk: 450 },
     Djelfa: { home: 950, desk: 450 },
     Jijel: { home: 800, desk: 450 },
-    Sétيف: { home: 800, desk: 450 },
+    Sétif: { home: 800, desk: 450 },
     Saïda: { home: 850, desk: 450 },
     Skikda: { home: 800, desk: 450 },
     "Sidi Bel Abbès": { home: 800, desk: 450 },
@@ -149,7 +149,7 @@ const DEFAULT_OFFICIAL = {
     Mila: { home: 800, desk: 450 },
     "Aïn Defla": { home: 800, desk: 450 },
     Naâma: { home: 1100, desk: 550 },
-    "Aïn Témوشنت": { home: 850, desk: 450 },
+    "Aïn Témouchent": { home: 850, desk: 450 },
     Ghardaïa: { home: 900, desk: 600 },
     Relizane: { home: 850, desk: 450 },
     Timimoun: { home: 1400, desk: null },
@@ -547,6 +547,25 @@ export default function App() {
                         setExcluded={setExcluded}
                     />
                 </div>
+
+                {/* wilaya code finder */}
+                <div className="card slide-up delay-3">
+                    <h2 className="card__title">4) دليل رموز الولايات</h2>
+                    <p className="muted">
+                        ابحث باسم الولاية لتحصل على رقمها (نسخ الرقم بنقرة).
+                    </p>
+                    <WilayaCodeTable />
+                </div>
+
+                {/* made by */}
+                <div className="card slide-up delay-4 made-by-card">
+                    <span className="made-by__label">MADE BY</span>
+                    <img
+                        src={LogoZynCode}
+                        alt="ZYNCODE"
+                        className="made-by__logo"
+                    />
+                </div>
             </section>
         </main>
     );
@@ -563,9 +582,13 @@ function OfficialTable({ official, onChange }) {
         [official]
     );
     const [q, setQ] = useState("");
-    const filtered = entries.filter(([name]) =>
-        name.toLowerCase().includes(q.toLowerCase())
-    );
+    const norm = (s) =>
+        (s || "")
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .toLowerCase();
+
+    const filtered = entries.filter(([name]) => norm(name).includes(norm(q)));
 
     return (
         <>
@@ -655,9 +678,13 @@ function NumberInput({ value, onChange, placeholder }) {
 function ExcludedEditor({ excluded, setExcluded }) {
     const [q, setQ] = useState("");
 
-    const filtered = ALL_WILAYAS.filter(([, n]) =>
-        n.toLowerCase().includes(q.toLowerCase())
-    );
+    const norm = (s) =>
+        (s || "")
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .toLowerCase();
+
+    const filtered = ALL_WILAYAS.filter(([, n]) => norm(n).includes(norm(q)));
 
     const toggle = (name) => {
         setExcluded((prev) => {
@@ -739,5 +766,107 @@ function ExcludedEditor({ excluded, setExcluded }) {
                 المُستبعدة حاليًا: {excluded.size} ولاية.
             </p>
         </div>
+    );
+}
+
+function WilayaCodeTable() {
+    const [q, setQ] = React.useState("");
+    const [copied, setCopied] = React.useState(null);
+
+    const normalize = (s) =>
+        (s || "")
+            .toString()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .toLowerCase();
+
+    const filtered = React.useMemo(() => {
+        const nq = normalize(q.trim());
+        return ALL_WILAYAS.filter(([code, name]) => {
+            const code2 = String(code).padStart(2, "0");
+            return code2.includes(nq) || normalize(name).includes(nq);
+        });
+    }, [q]);
+
+    const copyCode = async (code, name) => {
+        const txt = String(code).padStart(2, "0");
+        try {
+            await navigator.clipboard.writeText(txt);
+        } catch {
+            const el = document.createElement("input");
+            el.value = txt;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand("copy");
+            el.remove();
+        }
+        setCopied(code);
+        setTimeout(() => setCopied(null), 1200);
+    };
+
+    return (
+        <>
+            <input
+                className="search"
+                placeholder="اكتب اسم الولاية أو رقمها…"
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+            />
+
+            <div className="table-wrap">
+                <table className="table" aria-label="جدول رموز الولايات">
+                    <thead>
+                        <tr>
+                            <th style={{ width: 120 }}>الرقم</th>
+                            <th>الولاية</th>
+                            <th style={{ width: 140 }}>نسخ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {filtered.map(([code, name]) => {
+                            const code2 = String(code).padStart(2, "0");
+                            const isCopied = copied === code;
+                            return (
+                                <tr key={name}>
+                                    <td>
+                                        <span
+                                            className="badge"
+                                            title="رمز الولاية"
+                                        >
+                                            {code2}
+                                        </span>
+                                        {isCopied && (
+                                            <span
+                                                className="muted"
+                                                style={{ marginInlineStart: 8 }}
+                                            >
+                                                تم النسخ ✓
+                                            </span>
+                                        )}
+                                    </td>
+                                    <td className="cell-w">{name}</td>
+                                    <td>
+                                        <button
+                                            className="btn"
+                                            onClick={() => copyCode(code, name)}
+                                            title="نسخ الرقم"
+                                        >
+                                            نسخ الرقم
+                                        </button>
+                                    </td>
+                                </tr>
+                            );
+                        })}
+                        {filtered.length === 0 && (
+                            <tr>
+                                <td colSpan={3} className="empty">
+                                    لا توجد نتائج.
+                                </td>
+                            </tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
+        </>
     );
 }
