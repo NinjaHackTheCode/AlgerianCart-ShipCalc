@@ -486,10 +486,19 @@ export default function App() {
                     </div>
                 </div>
 
+                {/* wilaya code finder */}
+                <div className="card slide-up delay-3">
+                    <h2 className="card__title">2) دليل رموز الولايات</h2>
+                    <p className="muted">
+                        ابحث باسم الولاية لتحصل على رقمها (نسخ الرقم بنقرة).
+                    </p>
+                    <WilayaCodeTable />
+                </div>
+
                 {/* official prices table */}
                 <div className="card slide-up delay-1">
                     <h2 className="card__title">
-                        2) لائحة الأسعار الرسمية (شركة الشحن)
+                        3) لائحة الأسعار الرسمية (شركة الشحن)
                     </h2>
                     <p className="muted">
                         تم تعبئة القيم افتراضيًا حسب قائمتك. أي تعديل يُحفَظ
@@ -537,7 +546,7 @@ export default function App() {
 
                 {/* excluded editor */}
                 <div className="card slide-up delay-2">
-                    <h2 className="card__title">3) الولايات المستبعدة</h2>
+                    <h2 className="card__title">4) الولايات المستبعدة</h2>
                     <p className="muted">
                         اختر الولايات التي لا تريد عرضها في الحاسبة والجدول.
                         الحفظ تلقائي.
@@ -546,15 +555,6 @@ export default function App() {
                         excluded={excluded}
                         setExcluded={setExcluded}
                     />
-                </div>
-
-                {/* wilaya code finder */}
-                <div className="card slide-up delay-3">
-                    <h2 className="card__title">4) دليل رموز الولايات</h2>
-                    <p className="muted">
-                        ابحث باسم الولاية لتحصل على رقمها (نسخ الرقم بنقرة).
-                    </p>
-                    <WilayaCodeTable />
                 </div>
 
                 {/* made by */}
