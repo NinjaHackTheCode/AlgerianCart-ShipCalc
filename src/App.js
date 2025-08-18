@@ -112,8 +112,8 @@ const DEFAULT_OFFICIAL = {
     Béjaïa: { home: 750, desk: 450 },
     Biskra: { home: 950, desk: 550 },
     Béchar: { home: 1100, desk: 600 },
-    Bouira: { home: 750, desk: 450 },
-    Blida: { home: 800, desk: 450 },
+    Blida: { home: 750, desk: 450 },
+    Bouira: { home: 800, desk: 450 },
     Tamanrasset: { home: 1500, desk: 750 },
     Tébessa: { home: 900, desk: 450 },
     Tlemcen: { home: 850, desk: 450 },
@@ -539,7 +539,7 @@ export default function App() {
                                 }
                             }}
                         >
-                            مسح الحفظ
+                            تحديد الافتراضي
                         </button>
                     </div>
                 </div>
@@ -638,6 +638,108 @@ function OfficialTable({ official, onChange }) {
                                 </td>
                             </tr>
                         ))}
+                        {filtered.length === 0 && (
+                            <tr>
+                                <td colSpan={3} className="empty">
+                                    لا توجد نتائج.
+                                </td>
+                            </tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
+        </>
+    );
+}
+
+function WilayaCodeTable() {
+    const [q, setQ] = React.useState("");
+    const [copied, setCopied] = React.useState(null);
+
+    const normalize = (s) =>
+        (s || "")
+            .toString()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .toLowerCase();
+
+    const filtered = React.useMemo(() => {
+        const nq = normalize(q.trim());
+        return ALL_WILAYAS.filter(([code, name]) => {
+            const code2 = String(code).padStart(2, "0");
+            return code2.includes(nq) || normalize(name).includes(nq);
+        });
+    }, [q]);
+
+    const copyCode = async (code, name) => {
+        const txt = String(code).padStart(2, "0");
+        try {
+            await navigator.clipboard.writeText(txt);
+        } catch {
+            const el = document.createElement("input");
+            el.value = txt;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand("copy");
+            el.remove();
+        }
+        setCopied(code);
+        setTimeout(() => setCopied(null), 1200);
+    };
+
+    return (
+        <>
+            <input
+                className="search"
+                placeholder="اكتب اسم الولاية أو رقمها…"
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+            />
+
+            <div className="table-wrap">
+                <table className="table" aria-label="جدول رموز الولايات">
+                    <thead>
+                        <tr>
+                            <th style={{ width: 120 }}>الرقم</th>
+                            <th>الولاية</th>
+                            <th style={{ width: 140 }}>نسخ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {filtered.map(([code, name]) => {
+                            const code2 = String(code).padStart(2, "0");
+                            const isCopied = copied === code;
+                            return (
+                                <tr key={name}>
+                                    <td>
+                                        <span
+                                            className="badge"
+                                            title="رمز الولاية"
+                                        >
+                                            {code2}
+                                        </span>
+                                        {isCopied && (
+                                            <span
+                                                className="muted"
+                                                style={{ marginInlineStart: 8 }}
+                                            >
+                                                تم النسخ ✓
+                                            </span>
+                                        )}
+                                    </td>
+                                    <td className="cell-w">{name}</td>
+                                    <td>
+                                        <button
+                                            className="btn"
+                                            onClick={() => copyCode(code, name)}
+                                            title="نسخ الرقم"
+                                        >
+                                            نسخ الرقم
+                                        </button>
+                                    </td>
+                                </tr>
+                            );
+                        })}
                         {filtered.length === 0 && (
                             <tr>
                                 <td colSpan={3} className="empty">
@@ -766,107 +868,5 @@ function ExcludedEditor({ excluded, setExcluded }) {
                 المُستبعدة حاليًا: {excluded.size} ولاية.
             </p>
         </div>
-    );
-}
-
-function WilayaCodeTable() {
-    const [q, setQ] = React.useState("");
-    const [copied, setCopied] = React.useState(null);
-
-    const normalize = (s) =>
-        (s || "")
-            .toString()
-            .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "")
-            .toLowerCase();
-
-    const filtered = React.useMemo(() => {
-        const nq = normalize(q.trim());
-        return ALL_WILAYAS.filter(([code, name]) => {
-            const code2 = String(code).padStart(2, "0");
-            return code2.includes(nq) || normalize(name).includes(nq);
-        });
-    }, [q]);
-
-    const copyCode = async (code, name) => {
-        const txt = String(code).padStart(2, "0");
-        try {
-            await navigator.clipboard.writeText(txt);
-        } catch {
-            const el = document.createElement("input");
-            el.value = txt;
-            document.body.appendChild(el);
-            el.select();
-            document.execCommand("copy");
-            el.remove();
-        }
-        setCopied(code);
-        setTimeout(() => setCopied(null), 1200);
-    };
-
-    return (
-        <>
-            <input
-                className="search"
-                placeholder="اكتب اسم الولاية أو رقمها…"
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-            />
-
-            <div className="table-wrap">
-                <table className="table" aria-label="جدول رموز الولايات">
-                    <thead>
-                        <tr>
-                            <th style={{ width: 120 }}>الرقم</th>
-                            <th>الولاية</th>
-                            <th style={{ width: 140 }}>نسخ</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {filtered.map(([code, name]) => {
-                            const code2 = String(code).padStart(2, "0");
-                            const isCopied = copied === code;
-                            return (
-                                <tr key={name}>
-                                    <td>
-                                        <span
-                                            className="badge"
-                                            title="رمز الولاية"
-                                        >
-                                            {code2}
-                                        </span>
-                                        {isCopied && (
-                                            <span
-                                                className="muted"
-                                                style={{ marginInlineStart: 8 }}
-                                            >
-                                                تم النسخ ✓
-                                            </span>
-                                        )}
-                                    </td>
-                                    <td className="cell-w">{name}</td>
-                                    <td>
-                                        <button
-                                            className="btn"
-                                            onClick={() => copyCode(code, name)}
-                                            title="نسخ الرقم"
-                                        >
-                                            نسخ الرقم
-                                        </button>
-                                    </td>
-                                </tr>
-                            );
-                        })}
-                        {filtered.length === 0 && (
-                            <tr>
-                                <td colSpan={3} className="empty">
-                                    لا توجد نتائج.
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
-            </div>
-        </>
     );
 }
